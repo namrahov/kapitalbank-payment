@@ -6,6 +6,7 @@ import com.kapitalbank.payment.model.dto.OrderResponse;
 import com.kapitalbank.payment.model.exception.KapitalbankException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -13,34 +14,25 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class KapitalbankService {
 
     private final KapitalbankProperties props;
     private final WebClient.Builder webClientBuilder;
 
-    private String baseUrl() {
-        return props.getBaseUrl().get(props.getMode());
-    }
-
-    private String hppUrl() {
-        return props.getHppUrl().get(props.getMode());
-    }
-
     /* =======================
-       Language / Currency
+       URL helpers
        ======================= */
 
-    public KapitalbankService setLanguage(String lang) {
-        props.setLanguage(lang);
-        return this;
+    private String apiBaseUrl() {
+        return props.apiBaseUrl();
     }
 
-    public KapitalbankService setCurrency(String currency) {
-        props.setCurrency(currency);
-        return this;
+    private String hppBaseUrl() {
+        return props.hppUrl();
     }
 
     /* =======================
@@ -68,32 +60,41 @@ public class KapitalbankService {
         return createOrderByType("Order_SMS", data);
     }
 
-    protected OrderResponse createOrderByType(String typeRid, Map<String, Object> data) {
+    protected OrderResponse createOrderByType(
+            String typeRid,
+            Map<String, Object> data) {
+
         Map<String, Object> order = new HashMap<>();
+
         order.put("typeRid", typeRid);
         order.put("amount", data.get("amount").toString());
-        order.put("currency", data.getOrDefault("currency", props.getCurrency()));
-        order.put("language", data.getOrDefault("language", props.getLanguage()));
+        order.put("currency", props.getHpp().getCurrency());
+        order.put("language", props.getHpp().getLanguage());
         order.put("description", data.getOrDefault("description", ""));
-        order.put("hppRedirectUrl", data.getOrDefault("redirect_url", props.getRedirectUrl()));
+        order.put("hppRedirectUrl", props.getRedirect().getCallback());
 
         if (data.containsKey("title")) {
             order.put("title", data.get("title"));
         }
 
-        if (props.isSaveCards() || Boolean.TRUE.equals(data.get("save_card"))) {
-            order.put("hppCofCapturePurposes", List.of("UnspecifiedMit", "Cit", "Recurring"));
+        if (props.getHpp().isSaveCards()
+                || Boolean.TRUE.equals(data.get("save_card"))) {
+
+            order.put("hppCofCapturePurposes",
+                    List.of("UnspecifiedMit", "Cit", "Recurring"));
+
             order.put("aut", Map.of("purpose", "AddCard"));
 
             if (data.containsKey("stored_id")) {
-                order.put("srcToken", Map.of("storedId", data.get("stored_id")));
+                order.put("srcToken",
+                        Map.of("storedId", data.get("stored_id")));
             }
         }
 
         Map<String, Object> payload = Map.of("order", order);
         Map<String, Object> response = request("POST", "/order", payload);
 
-        Map<String, Object> r = (Map<String, Object>) response.get("order");
+        Map<String, Object> r = cast(response.get("order"));
 
         return new OrderResponse(
                 Long.valueOf(r.get("id").toString()),
@@ -106,11 +107,13 @@ public class KapitalbankService {
     }
 
     /* =======================
-       Redirect / URLs
+       HPP redirect
        ======================= */
 
     public String getPaymentUrl(Long orderId, String password) {
-        return hppUrl() + "?id=" + orderId + "&password=" + password;
+        return hppBaseUrl()
+                + "?id=" + orderId
+                + "&password=" + password;
     }
 
     /* =======================
@@ -126,28 +129,25 @@ public class KapitalbankService {
 
     public String getOrderStatus(Long orderId) {
         Map<String, Object> details = getOrderDetails(orderId, false);
-        Map<String, Object> order = (Map<String, Object>) details.get("order");
-        return order != null ? order.getOrDefault("status", "Unknown").toString() : "Unknown";
+        Map<String, Object> order = cast(details.get("order"));
+        return order != null
+                ? order.getOrDefault("status", "Unknown").toString()
+                : "Unknown";
     }
 
     /* =======================
-       Transactions
+       Status helpers
        ======================= */
 
-    public Map<String, Object> executeTransaction(Long orderId, Map<String, Object> data) {
-        return request("POST", "/order/" + orderId + "/exec-tran",
-                Map.of("tran", data));
-    }
-
     public boolean isSuccessful(String status) {
-        return List.of("FullyPaid", "PartiallyPaid", "Approved").contains(status);
+        return List.of("FullyPaid", "PartiallyPaid", "Approved")
+                .contains(status);
     }
 
     /* =======================
        Callback verification
        ======================= */
 
-    @SuppressWarnings("unchecked")
     public KapitalbankCallbackResult verifyCallback(
             Map<String, String> params) {
 
@@ -155,25 +155,18 @@ public class KapitalbankService {
         String callbackStatus = params.getOrDefault("STATUS", params.get("status"));
 
         if (orderId == null) {
-            throw new KapitalbankException("Order ID tapılmadı callback-də");
+            throw new KapitalbankException(
+                    "Kapitalbank callback-də Order ID tapılmadı");
         }
 
-        Map<String, Object> details = getOrderDetails(Long.valueOf(orderId), true);
-        Map<String, Object> order = (Map<String, Object>) details.get("order");
+        Map<String, Object> details =
+                getOrderDetails(Long.valueOf(orderId), true);
 
-        String actualStatus = order.getOrDefault("status", "Unknown").toString();
+        Map<String, Object> order = cast(details.get("order"));
+        String actualStatus =
+                order.getOrDefault("status", "Unknown").toString();
 
-        Long storedTokenId = null;
-        Object tokens = order.get("storedTokens");
-        if (tokens instanceof List<?> list && !list.isEmpty()) {
-            Object first = list.getFirst();
-            if (first instanceof Map<?, ?> token) {
-                Object id = token.get("id");
-                if (id != null) {
-                    storedTokenId = Long.valueOf(id.toString());
-                }
-            }
-        }
+        Long storedTokenId = extractStoredTokenId(order);
 
         return new KapitalbankCallbackResult(
                 Long.valueOf(orderId),
@@ -185,7 +178,6 @@ public class KapitalbankService {
         );
     }
 
-
     /* =======================
        HTTP client
        ======================= */
@@ -195,39 +187,57 @@ public class KapitalbankService {
             String endpoint,
             Map<String, Object> body) {
 
-        String url = baseUrl() + endpoint;
-
-        logIfEnabled("request", Map.of("method", method, "url", url));
+        String url = apiBaseUrl() + endpoint;
 
         WebClient client = webClientBuilder
                 .baseUrl(url)
-                .defaultHeaders(h -> h.setBasicAuth(
-                        props.getUsername(),
-                        props.getPassword()
-                ))
+                .defaultHeaders(h -> {
+                    h.set("Merchant-Id", props.getApi().getMerchantId());
+                    h.set("Terminal-Id", props.getApi().getTerminalId());
+                })
                 .build();
 
         try {
-            WebClient.ResponseSpec spec =
-                    method.equals("GET")
-                            ? client.get().retrieve()
-                            : client.post().bodyValue(body).retrieve();
-
-            Map<String, Object> response =
-                    spec.bodyToMono(Map.class).block();
-
-            logIfEnabled("response", response);
-            return response;
+            return ("GET".equals(method)
+                    ? client.get()
+                    : client.post().bodyValue(body))
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
 
         } catch (Exception ex) {
             throw new KapitalbankException(
-                    "Kapitalbank API ilə əlaqə xətası: " + ex.getMessage());
+                    "Kapitalbank API xətası: " + ex.getMessage());
         }
     }
 
-    protected void logIfEnabled(String type, Object data) {
+    /* =======================
+       Helpers
+       ======================= */
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> cast(Object obj) {
+        return (Map<String, Object>) obj;
+    }
+
+    private Long extractStoredTokenId(Map<String, Object> order) {
+        Object tokens = order.get("storedTokens");
+        if (tokens instanceof List<?> list && !list.isEmpty()) {
+            Object first = list.get(0);
+            if (first instanceof Map<?, ?> token) {
+                Object id = token.get("id");
+                if (id != null) {
+                    return Long.valueOf(id.toString());
+                }
+            }
+        }
+        return null;
+    }
+
+    private void logIfEnabled(String type, Object data) {
         if (props.getLogging().isEnabled()) {
             log.info("Kapitalbank [{}] {}", type, data);
         }
     }
 }
+

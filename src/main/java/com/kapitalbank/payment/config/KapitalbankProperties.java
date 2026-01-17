@@ -3,37 +3,81 @@ package com.kapitalbank.payment.config;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
 
-@EnableConfigurationProperties(KapitalbankProperties.class)
-@ConfigurationProperties(prefix = "kapitalbank")
 @Getter
 @Setter
+@Configuration
+@ConfigurationProperties(prefix = "kapitalbank")
 public class KapitalbankProperties {
 
+    /**
+     * test | production
+     */
     private String mode;
-    private String username;
-    private String password;
-    private String currency = "AZN";
-    private String language = "az";
-    private int timeoutSeconds = 30;
 
-    private Map<String, String> baseUrl;
-    private Map<String, String> hppUrl;
-
-    private String redirectUrl;
-    private String successUrl;
-    private String errorUrl;
-    private boolean saveCards;
-
+    private Api api = new Api();
+    private Hpp hpp = new Hpp();
+    private Redirect redirect = new Redirect();
     private Logging logging = new Logging();
 
+    // =========================
+    // API (server-to-server)
+    // =========================
+    @Getter
+    @Setter
+    public static class Api {
+        private Map<String, String> baseUrl;
+        private String merchantId;
+        private String terminalId;
+        private String secretKey;
+        private int timeoutSeconds = 30;
+    }
+
+    // =========================
+    // HPP (Hosted Payment Page)
+    // =========================
+    @Getter
+    @Setter
+    public static class Hpp {
+        private Map<String, String> url;
+        private String currency = "AZN";
+        private String language = "az";
+        private boolean saveCards;
+    }
+
+    // =========================
+    // Redirect URLs
+    // =========================
+    @Getter
+    @Setter
+    public static class Redirect {
+        private String callback;
+        private String success;
+        private String error;
+    }
+
+    // =========================
+    // Logging
+    // =========================
     @Getter
     @Setter
     public static class Logging {
         private boolean enabled;
     }
+
+    // =========================
+    // Helper methods (VERY useful)
+    // =========================
+    public String apiBaseUrl() {
+        return api.getBaseUrl().get(mode);
+    }
+
+    public String hppUrl() {
+        return hpp.getUrl().get(mode);
+    }
 }
+
 

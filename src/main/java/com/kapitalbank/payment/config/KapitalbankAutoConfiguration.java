@@ -1,22 +1,18 @@
 package com.kapitalbank.payment.config;
 
-import com.kapitalbank.payment.service.KapitalbankService;
+import com.kapitalbank.payment.client.KapitalbankClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
 
-@Configuration
-@EnableConfigurationProperties(KapitalbankProperties.class)
+@Configuration(proxyBeanMethods = false)
 public class KapitalbankAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public KapitalbankService kapitalbankService(
-            KapitalbankProperties props,
-            WebClient.Builder builder) {
+    public KapitalbankClient kapitalbankClient(
+            KapitalbankProperties properties) {
 
-        return new KapitalbankService(props, builder);
+        return new KapitalbankClient(properties);
     }
 }
