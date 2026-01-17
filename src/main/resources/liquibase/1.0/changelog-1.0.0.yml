@@ -1,0 +1,148 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-kapitalbank-payments
+      author: you
+      changes:
+        - createTable:
+            tableName: kapitalbank_payments
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+
+              - column:
+                  name: order_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+
+              - column:
+                  name: secret
+                  type: VARCHAR(255)
+
+              - column:
+                  name: amount
+                  type: DECIMAL(10,2)
+
+              - column:
+                  name: currency
+                  type: CHAR(3)
+                  defaultValue: AZN
+
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  defaultValue: Preparing
+
+              - column:
+                  name: type
+                  type: VARCHAR(50)
+                  defaultValue: Order_SMS
+
+              - column:
+                  name: approval_code
+                  type: VARCHAR(100)
+
+              - column:
+                  name: transaction_id
+                  type: VARCHAR(100)
+
+              - column:
+                  name: rrn
+                  type: VARCHAR(100)
+
+              - column:
+                  name: card_mask
+                  type: VARCHAR(50)
+
+              - column:
+                  name: card_brand
+                  type: VARCHAR(50)
+
+              - column:
+                  name: stored_token_id
+                  type: BIGINT
+
+              - column:
+                  name: description
+                  type: VARCHAR(255)
+
+              - column:
+                  name: language
+                  type: CHAR(2)
+                  defaultValue: az
+
+              - column:
+                  name: error_code
+                  type: VARCHAR(50)
+
+              - column:
+                  name: error_message
+                  type: TEXT
+
+              - column:
+                  name: reference_type
+                  type: VARCHAR(50)
+
+              - column:
+                  name: reference_id
+                  type: BIGINT
+
+              - column:
+                  name: user_id
+                  type: BIGINT
+
+              - column:
+                  name: meta
+                  type: JSON
+
+              - column:
+                  name: response
+                  type: JSON
+
+              - column:
+                  name: ip_address
+                  type: VARCHAR(45)
+
+              - column:
+                  name: user_agent
+                  type: TEXT
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+
+        - createIndex:
+            tableName: kapitalbank_payments
+            indexName: idx_kb_payments_status
+            columns:
+              - column:
+                  name: status
+
+        - createIndex:
+            tableName: kapitalbank_payments
+            indexName: idx_kb_payments_user
+            columns:
+              - column:
+                  name: user_id
+
+        - createIndex:
+            tableName: kapitalbank_payments
+            indexName: idx_kb_payments_reference
+            columns:
+              - column:
+                  name: reference_type
+              - column:
+                  name: reference_id

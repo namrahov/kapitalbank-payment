@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-kapitalbank-saved-cards
+      author: you
+      changes:
+        - createTable:
+            tableName: kapitalbank_saved_cards
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+
+              - column:
+                  name: user_id
+                  type: BIGINT
+
+              - column:
+                  name: stored_token_id
+                  type: BIGINT
+                  constraints:
+                    unique: true
+
+              - column:
+                  name: card_mask
+                  type: VARCHAR(50)
+
+              - column:
+                  name: card_brand
+                  type: VARCHAR(50)
+
+              - column:
+                  name: expiration
+                  type: VARCHAR(10)
+
+              - column:
+                  name: display_name
+                  type: VARCHAR(100)
+
+              - column:
+                  name: is_default
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+
+        - createIndex:
+            tableName: kapitalbank_saved_cards
+            indexName: idx_kb_cards_user
+            columns:
+              - column:
+                  name: user_id

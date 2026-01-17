@@ -1,0 +1,64 @@
+server:
+  port: 1992
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kapitalbank-payment
+    username: postgres
+    password: Genius33Frozen
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  jackson:
+    default-property-inclusion: NON_NULL
+    serialization:
+      order-map-entries-by-keys: false
+  liquibase:
+    change-log: classpath:liquibase/changelog-master.yml
+
+  threads:
+    virtual:
+      enabled: true
+
+
+verify-message:
+  last: 20 #seconds
+  schedule-delay: 5000 #millisecond
+
+
+security:
+  cors:
+    origin: "*"
+    header: "*"
+    method: "*"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /v3/api-docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+bot:
+  telegram-token: 8500672795:AAHWKjVncxcTMF_hwIK0JgyAAaqoHJDRr5s
+
+license:
+  trial-days: 14
+  hmac-secret: change-me-to-a-long-random-string
+
+logging:
+  level:
+    org.hibernate: WARN
+
