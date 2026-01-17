@@ -62,3 +62,26 @@ logging:
   level:
     org.hibernate: WARN
 
+kapitalbank:
+  mode: test
+  username: your-username
+  password: your-password
+  currency: AZN
+  language: az
+  timeout-seconds: 30
+
+  base-url:
+    test: https://api-test.kapitalbank.az
+    prod: https://api.kapitalbank.az
+
+  hpp-url:
+    test: https://hpp-test.kapitalbank.az
+    prod: https://hpp.kapitalbank.az
+
+  redirect-url: /payment/kapitalbank/callback
+
+  save-cards: true
+
+  logging:
+    enabled: true
+

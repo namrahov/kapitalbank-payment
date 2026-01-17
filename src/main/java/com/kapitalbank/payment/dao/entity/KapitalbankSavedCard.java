@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
+import java.time.YearMonth;
 
 @Getter
 @Setter
@@ -29,60 +30,77 @@ public class KapitalbankSavedCard {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Owner of the saved card
-     */
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    /**
-     * Token returned by Kapitalbank (never store real PAN)
-     */
     @Column(name = "stored_token_id", nullable = false, unique = true)
     private Long storedTokenId;
 
-    /**
-     * Masked card number (e.g. 4111********1111)
-     */
     @Column(name = "card_mask", nullable = false, length = 50)
     private String cardMask;
 
-    /**
-     * VISA / MASTERCARD / etc.
-     */
     @Column(name = "card_brand", length = 50)
     private String cardBrand;
 
     /**
-     * Card expiration (MM/YY or MM/YYYY depending on bank format)
+     * MMYY (e.g. 0527)
      */
-    @Column(name = "expiration", length = 10)
+    @Column(name = "expiration", length = 4)
     private String expiration;
 
-    /**
-     * Friendly name shown to user
-     */
     @Column(name = "display_name", length = 100)
     private String displayName;
 
-    /**
-     * Default card flag
-     */
     @Column(name = "is_default", nullable = false)
     private boolean defaultCard = false;
 
-    /**
-     * Soft-disable flag
-     */
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private Instant createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at")
     private Instant updatedAt;
-}
 
+    /* =======================
+       Derived properties
+       ======================= */
+
+    /**
+     * Last 4 digits of card
+     */
+    @Transient
+    public String getLastFour() {
+        if (cardMask == null || cardMask.length() < 4) {
+            return "";
+        }
+        return cardMask.substring(cardMask.length() - 4);
+    }
+
+    /**
+     * **** **** **** 1234
+     */
+    @Transient
+    public String getFormattedMask() {
+        return "**** **** **** " + getLastFour();
+    }
+
+    /**
+     * Expiration check
+     */
+    @Transient
+    public boolean isExpired() {
+        if (expiration == null || expiration.length() != 4) {
+            return false;
+        }
+
+        int month = Integer.parseInt(expiration.substring(0, 2));
+        int year = 2000 + Integer.parseInt(expiration.substring(2, 4));
+
+        YearMonth expiry = YearMonth.of(year, month);
+        return expiry.atEndOfMonth().isBefore(java.time.LocalDate.now());
+    }
+}
