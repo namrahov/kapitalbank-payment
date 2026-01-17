@@ -24,6 +24,8 @@ public class KapitalbankProperties {
     private Map<String, String> hppUrl;
 
     private String redirectUrl;
+    private String successUrl;
+    private String errorUrl;
     private boolean saveCards;
 
     private Logging logging = new Logging();

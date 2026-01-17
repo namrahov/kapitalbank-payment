@@ -69,7 +69,6 @@ public class KapitalbankService {
     }
 
     protected OrderResponse createOrderByType(String typeRid, Map<String, Object> data) {
-
         Map<String, Object> order = new HashMap<>();
         order.put("typeRid", typeRid);
         order.put("amount", data.get("amount").toString());

@@ -79,6 +79,8 @@ kapitalbank:
     prod: https://hpp.kapitalbank.az
 
   redirect-url: /payment/kapitalbank/callback
+  success-url: /payment/success
+  error_url: /payment/error
 
   save-cards: true
 

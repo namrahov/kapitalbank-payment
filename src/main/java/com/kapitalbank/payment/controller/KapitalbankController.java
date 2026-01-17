@@ -29,9 +29,7 @@ public class KapitalbankController {
      * Kapitalbank callback endpoint
      */
     @GetMapping("/callback")
-    public String callback(
-            HttpServletRequest request,
-            RedirectAttributes redirectAttributes) {
+    public String callback(HttpServletRequest request, RedirectAttributes redirectAttributes) {
 
         Map<String, String> params = request.getParameterMap()
                 .entrySet()
@@ -43,11 +41,9 @@ public class KapitalbankController {
         log.info("Kapitalbank Callback: {}", params);
 
         try {
-            KapitalbankCallbackResult result =
-                    kapitalbankService.verifyCallback(params);
+            KapitalbankCallbackResult result = kapitalbankService.verifyCallback(params);
 
             if (result.successful()) {
-
                 eventPublisher.publishEvent(
                         new PaymentSuccessfulEvent(
                                 result.orderId(),
@@ -67,7 +63,6 @@ public class KapitalbankController {
                 return "redirect:/payment/kapitalbank/success";
 
             } else {
-
                 eventPublisher.publishEvent(
                         new PaymentFailedEvent(
                                 result.orderId(),
@@ -89,14 +84,11 @@ public class KapitalbankController {
 
                 return "redirect:/payment/kapitalbank/error";
             }
-
         } catch (Exception ex) {
             log.error("Kapitalbank Callback Exception", ex);
 
-            redirectAttributes.addFlashAttribute(
-                    "kapitalbank_success", false);
-            redirectAttributes.addFlashAttribute(
-                    "kapitalbank_error", ex.getMessage());
+            redirectAttributes.addFlashAttribute("kapitalbank_success", false);
+            redirectAttributes.addFlashAttribute("kapitalbank_error", ex.getMessage());
 
             return "redirect:/payment/kapitalbank/error";
         }
