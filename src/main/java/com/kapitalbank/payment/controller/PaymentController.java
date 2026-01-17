@@ -1,67 +1,51 @@
 package com.kapitalbank.payment.controller;
 
 import com.kapitalbank.payment.client.KapitalbankClient;
+import com.kapitalbank.payment.model.dto.CreatePaymentResponse;
 import com.kapitalbank.payment.model.dto.PaymentRequest;
+import com.kapitalbank.payment.model.dto.PaymentStatusResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 
-@Controller
+@RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/payments")
 public class PaymentController {
 
     private final KapitalbankClient kapitalbankClient;
 
-    // =========================
-    // Checkout page
-    // GET /checkout
-    // =========================
-    @GetMapping("/checkout")
-    public String checkout() {
-        return "payment/checkout";
+    /**
+     * React calls this to start payment
+     */
+    @PostMapping
+    public CreatePaymentResponse createPayment(@RequestBody @Valid PaymentRequest request) {
+
+        var order = kapitalbankClient.createOrder(request.amount());
+
+        return new CreatePaymentResponse(
+                order.orderId(),
+                order.redirectUrl()
+        );
     }
 
-    // =========================
-    // Start payment
-    // POST /payment/pay
-    // =========================
-    @PostMapping("/payment/pay")
-    public String pay(
-            @Valid PaymentRequest request,
-            RedirectAttributes redirectAttributes
-    ) {
-        try {
-            var order = kapitalbankClient.createOrder(request.amount());
-            return "redirect:" + order.redirectUrl();
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute(
-                    "error", "Xəta baş verdi: " + e.getMessage()
-            );
-            return "redirect:/checkout";
-        }
-    }
+    /**
+     * React checks payment result
+     */
+    @GetMapping("/{orderId}")
+    public PaymentStatusResponse getStatus(
+            @PathVariable String orderId) {
 
-    // =========================
-    // Success page
-    // GET /payment/success
-    // =========================
-    @GetMapping("/payment/success")
-    public String success() {
-        return "payment/success";
-    }
-
-    // =========================
-    // Error page
-    // GET /payment/error
-    // =========================
-    @GetMapping("/payment/error")
-    public String error() {
-        return "payment/error";
+        // read from DB
+        return new PaymentStatusResponse(orderId, "PAID");
     }
 }
+
 
 
