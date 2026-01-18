@@ -89,4 +89,15 @@ kapitalbank:
   logging:
     enabled: true
 
+paddle:
+  mode: sandbox # sandbox | live
+  api:
+    base-url:
+      sandbox: https://sandbox-api.paddle.com
+      live: https://api.paddle.com
+    api-key: ${PADDLE_API_KEY}          # Bearer token
+    version: "1"                        # Paddle-Version header (major)
+  webhook:
+    endpoint-secret: ${PADDLE_WEBHOOK_SECRET}  # notification destination secret key
+
 

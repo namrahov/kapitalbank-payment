@@ -9,7 +9,6 @@ import java.util.Map;
 
 @Getter
 @Setter
-@Configuration
 @ConfigurationProperties(prefix = "kapitalbank")
 public class KapitalbankProperties {
 
