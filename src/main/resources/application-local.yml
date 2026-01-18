@@ -83,7 +83,7 @@ kapitalbank:
     save-cards: true
 
   redirect:
-    callback: https://your-domain.com/payment/kapitalbank/callback
+    callback: http://localhost:1992/payment/kapitalbank/callback
     success: /payment/success
     error: /payment/error
 

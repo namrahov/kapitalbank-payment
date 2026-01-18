@@ -1,14 +1,21 @@
 package com.kapitalbank.payment.controller;
 
+import com.kapitalbank.payment.model.dto.CreateOrderResponse;
+import com.kapitalbank.payment.model.dto.CreatePaymentRequest;
 import com.kapitalbank.payment.model.dto.KapitalbankCallbackResult;
 import com.kapitalbank.payment.model.event.PaymentFailedEvent;
 import com.kapitalbank.payment.model.event.PaymentSuccessfulEvent;
 import com.kapitalbank.payment.service.KapitalbankService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Controller;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -19,10 +26,25 @@ import java.util.Map;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/payment/kapitalbank")
+@Validated
 public class KapitalbankController {
 
     private final KapitalbankService kapitalbankService;
     private final ApplicationEventPublisher eventPublisher;
+
+    @PostMapping
+    public CreateOrderResponse createOrder(@RequestBody @Valid CreatePaymentRequest request) {
+        return kapitalbankService.createOrderAndGetPaymentUrl(request);
+    }
+
+
+
+
+
+
+
+
+
 
     /**
      * Kapitalbank callback endpoint

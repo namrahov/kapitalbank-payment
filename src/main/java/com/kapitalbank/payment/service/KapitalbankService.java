@@ -1,6 +1,8 @@
 package com.kapitalbank.payment.service;
 
 import com.kapitalbank.payment.config.KapitalbankProperties;
+import com.kapitalbank.payment.model.dto.CreateOrderResponse;
+import com.kapitalbank.payment.model.dto.CreatePaymentRequest;
 import com.kapitalbank.payment.model.dto.KapitalbankCallbackResult;
 import com.kapitalbank.payment.model.dto.OrderResponse;
 import com.kapitalbank.payment.model.exception.KapitalbankException;
@@ -35,6 +37,25 @@ public class KapitalbankService {
         return props.hppUrl();
     }
 
+
+    public CreateOrderResponse createOrderAndGetPaymentUrl(CreatePaymentRequest request) {
+        Map<String, Object> data = Map.of(
+                "amount", request.amount(),
+                "description", request.description()
+        );
+
+        OrderResponse order = createPreAuthOrder(data);
+
+        String redirectUrl = getPaymentUrl(order.id(), order.password());
+
+        return new CreateOrderResponse(order.id(), redirectUrl);
+
+    }
+
+    public OrderResponse createPreAuthOrder(Map<String, Object> data) {
+        return createOrderByType("Order_DMS", data);
+    }
+
     /* =======================
        Order creation
        ======================= */
@@ -43,9 +64,6 @@ public class KapitalbankService {
         return createOrderByType("Order_SMS", data);
     }
 
-    public OrderResponse createPreAuthOrder(Map<String, Object> data) {
-        return createOrderByType("Order_DMS", data);
-    }
 
     public OrderResponse createRecurringOrder(Map<String, Object> data) {
         return createOrderByType("Order_REC", data);
@@ -239,5 +257,6 @@ public class KapitalbankService {
             log.info("Kapitalbank [{}] {}", type, data);
         }
     }
+
 }
 

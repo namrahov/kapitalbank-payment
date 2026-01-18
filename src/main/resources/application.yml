@@ -63,27 +63,31 @@ logging:
     org.hibernate: WARN
 
 kapitalbank:
-  mode: production
-  username: your-username
-  password: your-password
-  currency: AZN
-  language: az
-  timeout-seconds: 30
+  mode: production   # test | production
 
-  base-url:
-    test: https://api-test.kapitalbank.az
-    prod: https://api.kapitalbank.az
+  api:
+    base-url:
+      test: https://txpgtst.kapitalbank.az/api
+      production: https://e-commerce.kapitalbank.az/api
+    merchant-id: YOUR_MERCHANT_ID
+    terminal-id: YOUR_TERMINAL_ID
+    secret-key: YOUR_SECRET_KEY
+    timeout-seconds: 30
 
-  hpp-url:
-    test: https://hpp-test.kapitalbank.az
-    prod: https://hpp.kapitalbank.az
+  hpp:
+    url:
+      test: https://txpgtst.kapitalbank.az/flex
+      production: https://e-commerce.kapitalbank.az/flex
+    language: az
+    currency: AZN
+    save-cards: true
 
-  redirect-url: /payment/kapitalbank/callback
-  success-url: /payment/success
-  error_url: /payment/error
-
-  save-cards: true
+  redirect:
+    callback: https://your-domain.com/payment/kapitalbank/callback
+    success: /payment/success
+    error: /payment/error
 
   logging:
     enabled: true
+
 
