@@ -71,7 +71,6 @@ kapitalbank:
       production: https://e-commerce.kapitalbank.az/api
     merchant-id: YOUR_MERCHANT_ID
     terminal-id: YOUR_TERMINAL_ID
-    secret-key: YOUR_SECRET_KEY
     timeout-seconds: 30
 
   hpp:

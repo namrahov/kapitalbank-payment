@@ -69,9 +69,8 @@ kapitalbank:
     base-url:
       test: https://txpgtst.kapitalbank.az/api
       production: https://e-commerce.kapitalbank.az/api
-    merchant-id: YOUR_MERCHANT_ID
-    terminal-id: YOUR_TERMINAL_ID
-    secret-key: YOUR_SECRET_KEY
+    merchant-id: 101
+    terminal-id: 41
     timeout-seconds: 30
 
   hpp:

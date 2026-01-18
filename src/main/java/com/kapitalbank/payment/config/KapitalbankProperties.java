@@ -32,7 +32,6 @@ public class KapitalbankProperties {
         private Map<String, String> baseUrl;
         private String merchantId;
         private String terminalId;
-        private String secretKey;
         private int timeoutSeconds = 30;
     }
 

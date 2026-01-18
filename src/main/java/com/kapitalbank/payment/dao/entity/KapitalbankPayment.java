@@ -109,20 +109,4 @@ public class KapitalbankPayment {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
-    /* =======================
-       Domain helpers
-       ======================= */
-
-    @Transient
-    public boolean isSuccessful() {
-        return status != null &&
-                (status.equals("FullyPaid")
-                        || status.equals("PartiallyPaid")
-                        || status.equals("Approved"));
-    }
-
-    @Transient
-    public boolean isPending() {
-        return "Preparing".equals(status);
-    }
 }

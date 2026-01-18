@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/payments/callback",
+                                "/payment/kapitalbank/**",
                                 "/actuator/health"
                         ).permitAll()
                         .anyRequest().authenticated()

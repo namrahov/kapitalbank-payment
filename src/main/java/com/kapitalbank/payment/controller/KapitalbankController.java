@@ -3,8 +3,6 @@ package com.kapitalbank.payment.controller;
 import com.kapitalbank.payment.model.dto.CreateOrderResponse;
 import com.kapitalbank.payment.model.dto.CreatePaymentRequest;
 import com.kapitalbank.payment.model.dto.KapitalbankCallbackResult;
-import com.kapitalbank.payment.model.event.PaymentFailedEvent;
-import com.kapitalbank.payment.model.event.PaymentSuccessfulEvent;
 import com.kapitalbank.payment.service.KapitalbankService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -14,12 +12,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Map;
 
@@ -56,24 +52,9 @@ public class KapitalbankController {
                     kapitalbankService.verifyCallback(params);
 
             if (result.successful()) {
-                eventPublisher.publishEvent(
-                        new PaymentSuccessfulEvent(
-                                result.orderId(),
-                                result.getStatus(),
-                                result.orderDetails(),
-                                result.storedTokenId()
-                        )
-                );
+
             } else {
-                eventPublisher.publishEvent(
-                        new PaymentFailedEvent(
-                                result.orderId(),
-                                result.getStatus(),
-                                result.orderDetails(),
-                                result.getStatus(),
-                                "Ödəniş uğursuz oldu"
-                        )
-                );
+
             }
 
             // BANK only needs HTTP 200
