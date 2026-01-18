@@ -5,6 +5,7 @@ import com.kapitalbank.payment.model.dto.CreateOrderResponse;
 import com.kapitalbank.payment.model.dto.CreatePaymentRequest;
 import com.kapitalbank.payment.model.dto.KapitalbankCallbackResult;
 import com.kapitalbank.payment.model.dto.OrderResponse;
+import com.kapitalbank.payment.model.enums.KapitalbankOrderType;
 import com.kapitalbank.payment.model.exception.KapitalbankException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,24 +60,6 @@ public class KapitalbankService {
     /* =======================
        Order creation
        ======================= */
-
-    public OrderResponse createOrder(Map<String, Object> data) {
-        return createOrderByType("Order_SMS", data);
-    }
-
-
-    public OrderResponse createRecurringOrder(Map<String, Object> data) {
-        return createOrderByType("Order_REC", data);
-    }
-
-    public OrderResponse createCardToCardOrder(Map<String, Object> data) {
-        return createOrderByType("OCT", data);
-    }
-
-    public OrderResponse createInstallmentOrder(Map<String, Object> data, int months) {
-        data.put("description", "TAKSIT=" + months);
-        return createOrderByType("Order_SMS", data);
-    }
 
     protected OrderResponse createOrderByType(
             String typeRid,
@@ -157,10 +140,28 @@ public class KapitalbankService {
        Status helpers
        ======================= */
 
-    public boolean isSuccessful(String status) {
-        return List.of("FullyPaid", "PartiallyPaid", "Approved")
-                .contains(status);
+    public boolean isSuccessful(
+            KapitalbankOrderType type,
+            String status) {
+
+        return switch (type) {
+
+            // Simple Sale → ONLY full payment is success
+            case ORDER_SMS ->
+                    status.equals("FullyPaid");
+
+            // PreAuth → Approved is success (money blocked)
+            case ORDER_DMS ->
+                    status.equals("Approved")
+                            || status.equals("FullyPaid");
+
+            // Recurring → partial allowed
+            case ORDER_REC ->
+                    status.equals("FullyPaid")
+                            || status.equals("PartiallyPaid");
+        };
     }
+
 
     /* =======================
        Callback verification
@@ -188,7 +189,7 @@ public class KapitalbankService {
                 Long.valueOf(orderId),
                 callbackStatus,
                 actualStatus,
-                isSuccessful(actualStatus),
+                isSuccessful(KapitalbankOrderType.ORDER_SMS, actualStatus),
                 order,
                 storedTokenId
         );
@@ -239,7 +240,7 @@ public class KapitalbankService {
     private Long extractStoredTokenId(Map<String, Object> order) {
         Object tokens = order.get("storedTokens");
         if (tokens instanceof List<?> list && !list.isEmpty()) {
-            Object first = list.get(0);
+            Object first = list.getFirst();
             if (first instanceof Map<?, ?> token) {
                 Object id = token.get("id");
                 if (id != null) {
@@ -248,12 +249,6 @@ public class KapitalbankService {
             }
         }
         return null;
-    }
-
-    private void logIfEnabled(String type, Object data) {
-        if (props.getLogging().isEnabled()) {
-            log.info("Kapitalbank [{}] {}", type, data);
-        }
     }
 
 }
