@@ -177,12 +177,10 @@ public class KapitalbankService {
                     "Kapitalbank callback-də Order ID tapılmadı");
         }
 
-        Map<String, Object> details =
-                getOrderDetails(Long.valueOf(orderId), true);
+        Map<String, Object> details = getOrderDetails(Long.valueOf(orderId), true);
 
         Map<String, Object> order = cast(details.get("order"));
-        String actualStatus =
-                order.getOrDefault("status", "Unknown").toString();
+        String actualStatus = order.getOrDefault("status", "Unknown").toString();
 
         Long storedTokenId = extractStoredTokenId(order);
 

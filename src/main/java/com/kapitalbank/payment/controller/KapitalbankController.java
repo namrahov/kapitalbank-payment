@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,15 +38,6 @@ public class KapitalbankController {
         return kapitalbankService.createOrderAndGetPaymentUrl(request);
     }
 
-
-
-
-
-
-
-
-
-
     /**
      * Kapitalbank callback endpoint
      * Supports BOTH GET and POST
@@ -54,9 +46,7 @@ public class KapitalbankController {
             value = "/callback",
             method = {RequestMethod.GET, RequestMethod.POST}
     )
-    public String callback(
-            HttpServletRequest request,
-            RedirectAttributes redirectAttributes) {
+    public ResponseEntity<Void> callback(HttpServletRequest request) {
 
         Map<String, String> params = extractParams(request);
         log.info("Kapitalbank callback received: {}", params);
@@ -66,40 +56,35 @@ public class KapitalbankController {
                     kapitalbankService.verifyCallback(params);
 
             if (result.successful()) {
-                publishSuccess(result);
-                populateSuccessRedirect(result, redirectAttributes);
-                return "redirect:/payment/kapitalbank/success";
+                eventPublisher.publishEvent(
+                        new PaymentSuccessfulEvent(
+                                result.orderId(),
+                                result.getStatus(),
+                                result.orderDetails(),
+                                result.storedTokenId()
+                        )
+                );
+            } else {
+                eventPublisher.publishEvent(
+                        new PaymentFailedEvent(
+                                result.orderId(),
+                                result.getStatus(),
+                                result.orderDetails(),
+                                result.getStatus(),
+                                "Ödəniş uğursuz oldu"
+                        )
+                );
             }
 
-            publishFailure(result);
-            populateFailureRedirect(result, redirectAttributes);
-            return "redirect:/payment/kapitalbank/error";
+            // BANK only needs HTTP 200
+            return ResponseEntity.ok().build();
 
         } catch (Exception ex) {
             log.error("Kapitalbank callback verification failed", ex);
 
-            redirectAttributes.addFlashAttribute("kapitalbank_success", false);
-            redirectAttributes.addFlashAttribute(
-                    "kapitalbank_error", ex.getMessage());
-
-            return "redirect:/payment/kapitalbank/error";
+            // Important: still return 200 to avoid retries storm
+            return ResponseEntity.ok().build();
         }
-    }
-
-    // =========================
-    // Success page
-    // =========================
-    @RequestMapping("/success")
-    public String success() {
-        return "kapitalbank/success";
-    }
-
-    // =========================
-    // Error page
-    // =========================
-    @RequestMapping("/error")
-    public String error() {
-        return "kapitalbank/error";
     }
 
     // =========================
@@ -116,48 +101,7 @@ public class KapitalbankController {
                 ));
     }
 
-    private void publishSuccess(KapitalbankCallbackResult result) {
-        eventPublisher.publishEvent(
-                new PaymentSuccessfulEvent(
-                        result.orderId(),
-                        result.getStatus(),
-                        result.orderDetails(),
-                        result.storedTokenId()
-                )
-        );
-    }
 
-    private void publishFailure(KapitalbankCallbackResult result) {
-        eventPublisher.publishEvent(
-                new PaymentFailedEvent(
-                        result.orderId(),
-                        result.getStatus(),
-                        result.orderDetails(),
-                        result.getStatus(),
-                        "Ödəniş uğursuz oldu: " + result.getStatus()
-                )
-        );
-    }
-
-    private void populateSuccessRedirect(
-            KapitalbankCallbackResult result,
-            RedirectAttributes attrs) {
-
-        attrs.addFlashAttribute("kapitalbank_order_id", result.orderId());
-        attrs.addFlashAttribute("kapitalbank_status", result.getStatus());
-        attrs.addFlashAttribute("kapitalbank_success", true);
-    }
-
-    private void populateFailureRedirect(
-            KapitalbankCallbackResult result,
-            RedirectAttributes attrs) {
-
-        attrs.addFlashAttribute("kapitalbank_order_id", result.orderId());
-        attrs.addFlashAttribute("kapitalbank_status", result.getStatus());
-        attrs.addFlashAttribute("kapitalbank_success", false);
-        attrs.addFlashAttribute(
-                "kapitalbank_error", "Ödəniş uğursuz oldu");
-    }
 }
 
 
