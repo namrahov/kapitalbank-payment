@@ -1,0 +1,52 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2026-01-13-01-create-trials
+      author: dlq-manager
+      changes:
+        - createTable:
+            tableName: trials
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+
+              - column:
+                  name: instance_id
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: valid_from
+                  type: TIMESTAMPTZ
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: valid_until
+                  type: TIMESTAMPTZ
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMPTZ
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: trials
+            columnNames: instance_id
+            constraintName: uk_trials_instance_id
+

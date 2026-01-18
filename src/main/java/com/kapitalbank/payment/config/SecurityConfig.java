@@ -27,7 +27,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/payments/callback",
                                 "/payment/kapitalbank/**",
-                                "/actuator/health"
+                                "/actuator/health",
+                                "/internal/licence/check-trial"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
