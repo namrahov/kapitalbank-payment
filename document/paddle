@@ -124,3 +124,54 @@ Email göndərirsən:
 Nəticə:
 
 Müştəri artıq məhsulu açıb aktivləşdirə bilir.
+
+
+
+Addımlar
+1. Paddle Dashboard-a daxil ol
+
+👉 https://vendors.paddle.com
+
+(yeni UI-də bəzən https://billing.paddle.com)
+
+2. Sol menyudan gir:
+
+Developer tools → Authentication / API keys
+
+(UI adları bir az dəyişə bilər, amma mütləq “API key” yazır)
+
+
+
+1. Paddle Dashboard
+
+👉 https://vendors.paddle.com
+
+2. Sol menyu:
+
+Developer tools → Webhooks / Notifications
+
+3. Webhook yarat (və ya mövcuduna bax)
+
+URL:
+
+https://api.senin-domain.com/api/paddle/webhook
+
+
+Events:
+
+transaction.completed
+
+subscription.created
+
+subscription.updated
+
+subscription.cancelled
+
+4. Secret key
+
+Webhook yaradanda Paddle sənə Secret göstərir:
+
+whsec_xxxxxxxxxxxxx
+
+
+👉 BAX BU PADDLE_WEBHOOK_SECRET-dir
