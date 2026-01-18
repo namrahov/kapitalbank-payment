@@ -1,0 +1,126 @@
+3) Üçüncü addım: Checkout yaratmaq (Sənin backend-in Paddle API-ni çağırır)
+3.1 Müştəri sənin saytında “Subscribe” klik edir
+
+Frontend sənin backend-ə çağırır:
+
+Sənin API:
+
+POST /api/billing/checkout
+Body:
+
+email
+
+priceId
+
+instanceId (sənin məhsulun üçün lazımdır)
+
+3.2 Backend Paddle API-ni çağırır
+
+Backend burada Paddle-a Transaction yaradır:
+
+Paddle API:
+
+POST /transactions
+
+Body-nin məğzi:
+
+items: [{ price_id, quantity }]
+
+custom_data: { email, instanceId, checkoutRef }
+
+Nəticə:
+
+Paddle cavabında sənə checkout URL qaytarır (checkout.url)
+
+3.3 Frontend redirect edir
+
+Frontend checkoutUrl-a redirect edir.
+Müştəri Paddle checkout-da kartla ödəyir.
+
+4) Dördüncü addım: Ödəniş tamamlanır (Paddle tərəfində)
+
+Müştəri ödənişi bitirəndə:
+
+Paddle transaction-u “paid/completed” edir
+
+Müştəriyə receipt göstərir
+
+Səni success page-ə yönləndirə bilər (opsional)
+
+Amma burada qızıl qayda:
+
+Success page göründü deyə “payment oldu” demək deyil. Backend yalnız webhook-a inanır.
+
+5) Beşinci addım: Webhook gəlir (ƏN VACİB mərhələ)
+
+Paddle sənin backend-ə webhook göndərir:
+
+Sənin endpoint:
+
+POST /api/paddle/webhook
+
+Header:
+
+Paddle-Signature: ts=...;h1=...
+
+Body:
+
+event_type (məs: transaction.completed)
+
+data (transaction məlumatları)
+
+içində sənin göndərdiyin custom_data da olur (email, instanceId, checkoutRef)
+
+5.1 Backend webhook-u imza ilə yoxlayır
+
+Sən:
+
+raw body götürürsən
+
+Paddle-Signature-u HMAC ilə verify edirsən
+Verify olmazsa → 401 qaytarırsan
+
+5.2 İdempotency (təkrar webhook)
+
+Paddle eyni webhook-u təkrar ata bilər.
+Ona görə sən:
+
+event_id və ya transaction_id-ni DB-də unique saxlayırsan
+
+Əgər artıq işlənibsə → “ok” deyib çıxırsan
+
+6) Altıncı addım: DB-yə yazmaq və Licence aktivləşdirmək
+
+Webhook verified + event transaction.completed (və ya payment success) olduqda:
+
+DB-də “payment” record yaradırsan:
+
+email
+
+transaction_id
+
+price_id / plan
+
+status = PAID
+
+paidAt
+
+Licence yaradırsan:
+
+licenseKey
+
+instanceId
+
+validFrom, validUntil
+
+status = ACTIVE
+
+Email göndərirsən:
+
+“Your license key is …”
+
+(və ya UI-də göstərirsən)
+
+Nəticə:
+
+Müştəri artıq məhsulu açıb aktivləşdirə bilir.
