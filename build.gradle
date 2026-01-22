@@ -39,6 +39,13 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
     implementation('org.springframework.boot:spring-boot-starter-validation')
     implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+    //mapstruct
+    implementation('org.mapstruct:mapstruct-jdk8:1.3.0.Final')
+    annotationProcessor('org.mapstruct:mapstruct-jdk8:1.3.0.Final')
+    annotationProcessor('org.mapstruct:mapstruct-processor:1.3.0.Final')
+    implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.5.3'
+    implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.4.0'
     // Groovy DSL
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'

@@ -100,4 +100,23 @@ paddle:
   webhook:
     endpoint-secret: ${PADDLE_WEBHOOK_SECRET}  # notification destination secret key
 
+user:
+  from: amrahovnurlan@gmail.com
+  password: oolgozqmutglbmsk
 
+  activation:
+    url: http://localhost:1991/v1/users/active
+  change-email:
+    url: http://localhost:1991/v1/users/change-email
+  forget-password:
+    url: https://beta-fr.datarace.ai/reset-password
+
+
+jwt:
+  signing:
+    key: date-race-1
+
+token:
+  lifetime: 720
+  extended-lifetime: 10080
+  secret-key: changeyourmindso
