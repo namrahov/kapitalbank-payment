@@ -86,6 +86,8 @@ public class EmailUtil {
             body = forgetPasswordEmail(link);
         } else if (linkType == LinkType.SET_PASSWORD) {
             body = setPasswordEmail(token);
+        } else if (linkType == LinkType.LICENSE) {
+            body = createLicenseMessage(token);
         }
 
         email.setBody(body);
@@ -109,5 +111,30 @@ public class EmailUtil {
     public String setPasswordEmail(String password) {
         return String.format("Your password for datarace is %s", password);
     }
+
+    public String createLicenseMessage(String license) {
+        return String.format(
+                """
+                Dear Customer,
+        
+                Thank you for choosing DLQ Manager.
+        
+                Your 1-year license has been successfully generated and is provided below.
+                This license is valid for 12 months from the activation date and enables full
+                access to all licensed features of the DLQ Manager product.
+        
+                License Key:
+                %s
+        
+                Please keep this license key secure. If you need to reinstall or migrate
+                the application, you may be required to provide the same license key again.
+        
+                Best regards,
+                DLQ Manager Support Team
+                """,
+                license
+        );
+    }
+
 
 }

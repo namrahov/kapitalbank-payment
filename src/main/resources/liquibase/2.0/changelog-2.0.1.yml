@@ -1,0 +1,65 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2025-01-24-001-create-order-table
+      author: tarxan
+      changes:
+        - createTable:
+            tableName: orders
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: DECIMAL(19,2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: bank_order_id
+                  type: BIGINT
+                  constraints:
+                    unique: true
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+
+        - addDefaultValue:
+            tableName: orders
+            columnName: created_at
+            defaultValueComputed: CURRENT_TIMESTAMP
+            columnDataType: TIMESTAMP WITH TIME ZONE
+
+        - createIndex:
+            tableName: orders
+            indexName: idx_orders_user_id
+            columns:
+              - column:
+                  name: user_id
+
+        - createIndex:
+            tableName: orders
+            indexName: idx_orders_bank_order_id
+            unique: true
+            columns:
+              - column:
+                  name: bank_order_id

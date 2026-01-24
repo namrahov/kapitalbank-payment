@@ -1,14 +1,22 @@
 package com.kapitalbank.payment.controller;
 
+import com.kapitalbank.payment.dao.entity.Order;
+import com.kapitalbank.payment.dao.entity.User;
+import com.kapitalbank.payment.dao.repo.OrderRepository;
+import com.kapitalbank.payment.dao.repo.UserRepository;
 import com.kapitalbank.payment.model.dto.CreateOrderResponse;
 import com.kapitalbank.payment.model.dto.CreatePaymentRequest;
+import com.kapitalbank.payment.model.dto.EmailDto;
 import com.kapitalbank.payment.model.dto.KapitalbankCallbackResult;
+import com.kapitalbank.payment.model.dto.OrderResponse;
+import com.kapitalbank.payment.model.enums.OrderStatus;
 import com.kapitalbank.payment.service.KapitalbankService;
+import com.kapitalbank.payment.service.LicenseService;
+import com.kapitalbank.payment.util.EmailUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
@@ -18,6 +26,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Map;
+import java.util.Optional;
+
+import static com.kapitalbank.payment.model.enums.LinkType.LICENSE;
 
 @Slf4j
 @Controller
@@ -27,11 +38,15 @@ import java.util.Map;
 public class KapitalbankController {
 
     private final KapitalbankService kapitalbankService;
-    private final ApplicationEventPublisher eventPublisher;
+    private final LicenseService licenseService;
+    private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
+    private final EmailUtil emailUtil;
 
     @PostMapping
-    public CreateOrderResponse createOrder(@RequestBody @Valid CreatePaymentRequest request) {
-        return kapitalbankService.createOrderAndGetPaymentUrl(request);
+    public CreateOrderResponse createOrder(@RequestBody @Valid CreatePaymentRequest request,
+                                           HttpServletRequest httpServletRequest) {
+        return kapitalbankService.createOrderAndGetPaymentUrl(request, httpServletRequest);
     }
 
     /**
@@ -50,13 +65,27 @@ public class KapitalbankController {
         try {
             KapitalbankCallbackResult result =
                     kapitalbankService.verifyCallback(params);
-
-            if (result.successful()) {
-
-            } else {
-
+            User user;
+            String userEmail = "";
+            Optional<Order> optionalDBOrder = orderRepository.findById(result.orderId());
+            Order order = new Order();
+            if (optionalDBOrder.isPresent()) {
+                order = optionalDBOrder.get();
+                user = userRepository.findById(order.getUserId())
+                        .orElseThrow(() -> new IllegalStateException("User not found"));
+                userEmail = user.getEmail();
             }
 
+            if (result.successful()) {
+                String licenseKey = licenseService.generateLicense("dgdww124fffff");
+                EmailDto emailDto = emailUtil.generateActivationEmail(licenseKey, LICENSE);
+                emailUtil.send(emailDto.getFrom(), userEmail, emailDto.getSubject(), emailDto.getBody());
+                order.setStatus(OrderStatus.SUCCESS);
+            } else {
+                order.setStatus(OrderStatus.FAIL);
+            }
+
+            orderRepository.save(order);
             // BANK only needs HTTP 200
             return ResponseEntity.ok().build();
 

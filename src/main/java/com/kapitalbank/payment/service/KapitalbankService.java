@@ -1,12 +1,19 @@
 package com.kapitalbank.payment.service;
 
 import com.kapitalbank.payment.config.KapitalbankProperties;
+import com.kapitalbank.payment.dao.entity.Order;
+import com.kapitalbank.payment.dao.entity.User;
+import com.kapitalbank.payment.dao.repo.OrderRepository;
+import com.kapitalbank.payment.dao.repo.UserRepository;
+import com.kapitalbank.payment.mapper.OrderMapper;
 import com.kapitalbank.payment.model.dto.CreateOrderResponse;
 import com.kapitalbank.payment.model.dto.CreatePaymentRequest;
 import com.kapitalbank.payment.model.dto.KapitalbankCallbackResult;
 import com.kapitalbank.payment.model.dto.OrderResponse;
 import com.kapitalbank.payment.model.enums.KapitalbankOrderType;
 import com.kapitalbank.payment.model.exception.KapitalbankException;
+import com.kapitalbank.payment.util.UserUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -16,6 +23,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @Slf4j
@@ -25,6 +33,10 @@ public class KapitalbankService {
 
     private final KapitalbankProperties props;
     private final WebClient.Builder webClientBuilder;
+    private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final OrderMapper orderMapper;
+    private final UserUtil userUtil;
 
     /* =======================
        URL helpers
@@ -39,17 +51,26 @@ public class KapitalbankService {
     }
 
 
-    public CreateOrderResponse createOrderAndGetPaymentUrl(CreatePaymentRequest request) {
+    public CreateOrderResponse createOrderAndGetPaymentUrl(CreatePaymentRequest request,
+                                                           HttpServletRequest httpServletRequest) {
+        User currentUser = userUtil.getCurrentUser(httpServletRequest);
+
         Map<String, Object> data = Map.of(
                 "amount", request.amount(),
                 "description", request.description()
         );
 
-        OrderResponse order = createPreAuthOrder(data);
+        OrderResponse orderResponse = createPreAuthOrder(data);
 
-        String redirectUrl = getPaymentUrl(order.id(), order.password());
+        orderRepository.save(orderMapper.buildOrder(
+                props.getHpp().getCurrency(),
+                request.amount(),
+                currentUser.getId(),
+                orderResponse.id()));
 
-        return new CreateOrderResponse(order.id(), redirectUrl);
+        String redirectUrl = getPaymentUrl(orderResponse.id(), orderResponse.password());
+
+        return new CreateOrderResponse(orderResponse.id(), redirectUrl);
 
     }
 
@@ -147,18 +168,15 @@ public class KapitalbankService {
         return switch (type) {
 
             // Simple Sale → ONLY full payment is success
-            case ORDER_SMS ->
-                    status.equals("FullyPaid");
+            case ORDER_SMS -> status.equals("FullyPaid");
 
             // PreAuth → Approved is success (money blocked)
-            case ORDER_DMS ->
-                    status.equals("Approved")
-                            || status.equals("FullyPaid");
+            case ORDER_DMS -> status.equals("Approved")
+                    || status.equals("FullyPaid");
 
             // Recurring → partial allowed
-            case ORDER_REC ->
-                    status.equals("FullyPaid")
-                            || status.equals("PartiallyPaid");
+            case ORDER_REC -> status.equals("FullyPaid")
+                    || status.equals("PartiallyPaid");
         };
     }
 
@@ -219,7 +237,8 @@ public class KapitalbankService {
                     ? client.get()
                     : client.post().bodyValue(body))
                     .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {
+                    })
                     .block();
 
         } catch (Exception ex) {

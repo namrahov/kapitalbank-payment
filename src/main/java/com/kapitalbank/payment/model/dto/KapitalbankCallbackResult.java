@@ -9,8 +9,7 @@ public record KapitalbankCallbackResult(
         String actualStatus,
         boolean successful,
         Map<String, Object> orderDetails,
-        Long storedTokenId
-) {
+        Long storedTokenId) {
     public String getStatus() {
         return actualStatus;
     }

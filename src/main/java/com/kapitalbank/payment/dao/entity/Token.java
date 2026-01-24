@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -35,6 +36,7 @@ public class Token implements Serializable {
 
     private Long userId;
 
+    @CreationTimestamp
     private LocalDateTime createdAt;
 
 }
