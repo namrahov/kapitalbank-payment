@@ -13,12 +13,13 @@ import java.math.BigDecimal;
 public interface OrderMapper {
 
 
-    default Order buildOrder(String currency, BigDecimal amount, Long userId, Long bankOrderId) {
+    default Order buildOrder(String currency, BigDecimal amount, Long userId, Long bankOrderId, String bankPassword) {
         Order orderEntity = new Order();
         orderEntity.setUserId(userId);
         orderEntity.setAmount(amount);
         orderEntity.setCurrency(currency);
         orderEntity.setUserId(userId);
+        orderEntity.setBankPassword(bankPassword);
         orderEntity.setStatus(OrderStatus.INITIAL);
         orderEntity.setBankOrderId(bankOrderId);
 

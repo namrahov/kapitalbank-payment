@@ -41,6 +41,9 @@ public class Order {
     @Column(nullable = false)
     private String currency;
 
+    @Column(name="bank_password", nullable = false)
+    private String bankPassword;
+
     @Column(unique = true)
     private Long bankOrderId; // Kapitalbank order ID
 

@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.kapitalbank.payment.model.enums.LinkType.LICENSE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @Slf4j
 @Controller
@@ -53,46 +55,41 @@ public class KapitalbankController {
      * Kapitalbank callback endpoint
      * Supports BOTH GET and POST
      */
-    @RequestMapping(
-            value = "/callback",
-            method = {RequestMethod.GET, RequestMethod.POST}
-    )
+    @RequestMapping(value="/callback", method={GET, POST})
     public ResponseEntity<Void> callback(HttpServletRequest request) {
-
         Map<String, String> params = extractParams(request);
-        log.info("Kapitalbank callback received: {}", params);
 
         try {
-            KapitalbankCallbackResult result =
-                    kapitalbankService.verifyCallback(params);
-            User user;
-            String userEmail = "";
-            Optional<Order> optionalDBOrder = orderRepository.findById(result.orderId());
-            Order order = new Order();
-            if (optionalDBOrder.isPresent()) {
-                order = optionalDBOrder.get();
-                user = userRepository.findById(order.getUserId())
-                        .orElseThrow(() -> new IllegalStateException("User not found"));
-                userEmail = user.getEmail();
+            KapitalbankCallbackResult result = kapitalbankService.verifyCallback(params);
+
+            Long bankOrderId = result.orderId();
+
+            Order order = orderRepository.findByBankOrderId(bankOrderId)
+                    .orElseThrow(() -> new IllegalStateException("Local order not found for bankOrderId=" + bankOrderId));
+
+            // idempotency
+            if (order.getStatus() == OrderStatus.SUCCESS) {
+                return ResponseEntity.ok().build();
             }
 
             if (result.successful()) {
-                String licenseKey = licenseService.generateLicense("dgdww124fffff");
+                User user = userRepository.findById(order.getUserId())
+                        .orElseThrow(() -> new IllegalStateException("User not found"));
+
+                String licenseKey = licenseService.generateLicense("1234fhfg");
                 EmailDto emailDto = emailUtil.generateActivationEmail(licenseKey, LICENSE);
-                emailUtil.send(emailDto.getFrom(), userEmail, emailDto.getSubject(), emailDto.getBody());
+                emailUtil.send(emailDto.getFrom(), user.getEmail(), emailDto.getSubject(), emailDto.getBody());
+
                 order.setStatus(OrderStatus.SUCCESS);
             } else {
                 order.setStatus(OrderStatus.FAIL);
             }
 
             orderRepository.save(order);
-            // BANK only needs HTTP 200
             return ResponseEntity.ok().build();
 
         } catch (Exception ex) {
             log.error("Kapitalbank callback verification failed", ex);
-
-            // Important: still return 200 to avoid retries storm
             return ResponseEntity.ok().build();
         }
     }

@@ -66,7 +66,8 @@ public class KapitalbankService {
                 props.getHpp().getCurrency(),
                 request.amount(),
                 currentUser.getId(),
-                orderResponse.id()));
+                orderResponse.id(),
+                orderResponse.password()));
 
         String redirectUrl = getPaymentUrl(orderResponse.id(), orderResponse.password());
 
