@@ -114,9 +114,8 @@ user:
 
 jwt:
   signing:
-    key: date-race-1
+    key: reehqqbb64fsd33fft345yffdsest2424
 
 token:
   lifetime: 720
-  extended-lifetime: 10080
   secret-key: changeyourmindso

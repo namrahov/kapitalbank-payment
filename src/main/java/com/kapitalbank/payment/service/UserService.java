@@ -18,7 +18,6 @@ import com.kapitalbank.payment.util.JwtUtil;
 import com.kapitalbank.payment.util.TokenUtil;
 import com.kapitalbank.payment.util.UserUtil;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -72,12 +71,6 @@ public class UserService implements UserDetailsService {
         this.userMapper = userMapper;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
     }
-
-    @Value("${token.lifetime}")
-    private Long tokenLifeTime;
-
-    @Value("${token.extended-lifetime}")
-    private Long tokenExtendedLifeTime;
 
     @Transactional
     public void registerUser(UserRegistrationDto dto) {
