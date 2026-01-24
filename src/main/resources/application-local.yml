@@ -73,10 +73,9 @@ kapitalbank:
     terminal-id: 41
     timeout-seconds: 30
 
-  hpp:
-    language: az
-    currency: AZN
-    save-cards: true
+  language: az
+  currency: AZN
+  save-cards: true
 
   redirect:
     callback: http://localhost:1992/payment/kapitalbank/callback

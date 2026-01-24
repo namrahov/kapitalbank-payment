@@ -18,7 +18,6 @@ public class KapitalbankProperties {
     private String mode;
 
     private Api api = new Api();
-    private Hpp hpp = new Hpp();
     private Redirect redirect = new Redirect();
     private Logging logging = new Logging();
 
@@ -34,16 +33,10 @@ public class KapitalbankProperties {
         private int timeoutSeconds = 30;
     }
 
-    // =========================
-    // HPP (Hosted Payment Page)
-    // =========================
-    @Getter
-    @Setter
-    public static class Hpp {
-        private String currency = "AZN";
-        private String language = "az";
-        private boolean saveCards;
-    }
+    private String currency = "AZN";
+    private String language = "az";
+    private boolean saveCards;
+
 
     // =========================
     // Redirect URLs

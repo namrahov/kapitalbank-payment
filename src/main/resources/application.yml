@@ -72,11 +72,9 @@ kapitalbank:
     merchant-id: YOUR_MERCHANT_ID
     terminal-id: YOUR_TERMINAL_ID
     timeout-seconds: 30
-
-  hpp:
-    language: az
-    currency: AZN
-    save-cards: true
+  language: az
+  currency: AZN
+  save-cards: true
 
   redirect:
     callback: https://your-domain.com/payment/kapitalbank/callback

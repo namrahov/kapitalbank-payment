@@ -61,7 +61,7 @@ public class KapitalbankService {
 
         // 2️⃣ Local DB-də order saxlanılır
         orderRepository.save(orderMapper.buildOrder(
-                props.getHpp().getCurrency(),
+                props.getCurrency(),
                 request.amount(),
                 currentUser.getId(),
                 orderResponse.id(),        // bankOrderId
@@ -92,8 +92,8 @@ public class KapitalbankService {
 
         order.put("typeRid", typeRid);
         order.put("amount", data.get("amount").toString());
-        order.put("currency", props.getHpp().getCurrency());
-        order.put("language", props.getHpp().getLanguage());
+        order.put("currency", props.getCurrency());
+        order.put("language", props.getLanguage());
         order.put("description", data.getOrDefault("description", ""));
         order.put("callbackUrl", props.getRedirect().getCallback());
         order.put("hppRedirectUrl", props.getRedirect().getReturnUrl());
@@ -102,7 +102,7 @@ public class KapitalbankService {
             order.put("title", data.get("title"));
         }
 
-        if (props.getHpp().isSaveCards()
+        if (props.isSaveCards()
                 || Boolean.TRUE.equals(data.get("save_card"))) {
 
             order.put("hppCofCapturePurposes",
