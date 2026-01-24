@@ -10,6 +10,7 @@ public class WhiteListApi {
     public static final String[] AUTH_WHITELIST = {
             "/v1/users/login",
             "/v1/users",
+            "/v1/license",
             "/v1/users/active",
             "/v1/users/change-email",
             "/v1/users/forget-password",
