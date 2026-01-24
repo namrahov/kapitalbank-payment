@@ -60,19 +60,32 @@ Controllers present in the project:
           window.location.href = paymentUrl;
   3. Ödənişidən sonra müştəri https://app.yourdomain.com/payment/return?ID=123456 yönləndirilir, yəni bizim
      order.put("hppRedirectUrl", props.getRedirect().getReturnUrl());  burda seçdiyimiz url-ə bizim səhifəyə qaytarılır
-  4. Front davamlı burdakı respons-dan götürdüyü bankOrderId-ni param kimi göndərərək 
-     /payment/kapitalbank/orders/status - a request atır və status alır və bilir ki hara yönləndirilməlidi:
-     useEffect(() => {
-         const orderId = new URLSearchParams(window.location.search).get("ID");
-        setInterval(async () => {
-        const res = await fetch(`/api/orders/status?bankOrderId=${orderId}`);
-        const data = await res.json();
+     4. Front davamlı burdakı respons-dan götürdüyü bankOrderId-ni param kimi göndərərək 
+        /payment/kapitalbank/orders/status - a request atır və status alır və bilir ki hara yönləndirilməlidi:
+        useEffect(() => {
+            const orderId = new URLSearchParams(window.location.search).get("ID");
+           setInterval(async () => {
+           const res = await fetch(`/api/orders/status?bankOrderId=${orderId}`);
+           const data = await res.json();
         
-            if (data.status === "SUCCESS") navigate("/payment/success");
-            if (data.status === "FAIL") navigate("/payment/fail");
-        }, 2000);
-        }, []);
+               if (data.status === "SUCCESS") navigate("/payment/success");
+               if (data.status === "FAIL") navigate("/payment/fail");
+           }, 2000);
+           }, []);
 
+                   Kapitalbank-a müraciət edirsən
+                   2️⃣ “E-commerce payment integration” deyirsən
+                   3️⃣ Sənə verirlər:
+                
+                   merchantId
+                   terminalId
+                   test mühiti üçün
+                   production üçün (sonra)
+                
+                   📧 Adətən email ilə gəlir:
+                   Test Merchant ID: XXXXX
+                   Test Terminal ID: YYYYY
+                   API Base URL: https://txpgtst.kapitalbank.az/api
 ___
 
 ## Paddle Flow 
