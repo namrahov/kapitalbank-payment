@@ -5,6 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,38 +26,26 @@ public class JwtUtil {
     @Value("${token.lifetime}")
     private Long tokenLifeTime;
 
-    public String extractEmail(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
+    private Key key;
 
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
+    @PostConstruct
+    void init() {
+        byte[] bytes = jwtSigningKey.getBytes(StandardCharsets.UTF_8);
 
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private Claims extractAllClaims(String token) {
-        return Jwts.parser().setSigningKey(jwtSigningKey).parseClaimsJws(token).getBody();
-    }
-
-    public Boolean isTokenExpired(String token) {
-        try {
-            return extractExpiration(token).before(new Date());
-        } catch (ExpiredJwtException e) {
-            return true;
+        if (bytes.length < 32) {
+            throw new IllegalStateException(
+                    "JWT signing key must be at least 32 bytes for HS256"
+            );
         }
+
+        this.key = Keys.hmacShaKeyFor(bytes);
     }
 
+    // =======================
+    // TOKEN GENERATION
+    // =======================
     public String generateToken(UserDetails userDetails) {
-        return createToken(userDetails);
-    }
-
-    private String createToken(UserDetails userDetails) {
         long expirationTime = TimeUnit.MINUTES.toMillis(tokenLifeTime);
-        Key key = Keys.hmacShaKeyFor(jwtSigningKey.getBytes(StandardCharsets.UTF_8));
 
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
@@ -69,9 +58,44 @@ public class JwtUtil {
                 .compact();
     }
 
-    public Boolean isTokenValid(String token, UserDetails userDetails) {
-        final String email = extractEmail(token);
-        return (email.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    // =======================
+    // TOKEN PARSING
+    // =======================
+    public String extractEmail(String token) {
+        return extractClaim(token, Claims::getSubject);
     }
 
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
+    public <T> T extractClaim(String token, Function<Claims, T> resolver) {
+        Claims claims = extractAllClaims(token);
+        return resolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    // =======================
+    // VALIDATION
+    // =======================
+    public boolean isTokenExpired(String token) {
+        try {
+            return extractExpiration(token).before(new Date());
+        } catch (ExpiredJwtException e) {
+            return true;
+        }
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String email = extractEmail(token);
+        return email.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    }
 }
+
