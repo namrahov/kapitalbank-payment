@@ -107,6 +107,7 @@ public class UserService implements UserDetailsService {
         }
     }
 
+    @Transactional
     public void activateAccount(String activationToken) {
         Token tokenEntity = tokenService.getToken(activationToken);
 

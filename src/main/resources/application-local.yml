@@ -105,11 +105,11 @@ user:
   password: oolgozqmutglbmsk
 
   activation:
-    url: http://localhost:1991/v1/users/active
+    url: http://localhost:1992/v1/users/active
   change-email:
-    url: http://localhost:1991/v1/users/change-email
+    url: http://localhost:1992/v1/users/change-email
   forget-password:
-    url: https://beta-fr.datarace.ai/reset-password
+    url: http://localhost:1992/v1/users/reset-password
 
 
 jwt:

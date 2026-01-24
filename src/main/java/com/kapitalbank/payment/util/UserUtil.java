@@ -62,6 +62,7 @@ public class UserUtil {
         return User.builder()
                 .email(dto.getEmail())
                 .username(dto.getUsername())
+                .isActive(isActive)
                 .roles(Collections.singletonList(role))
                 .password(bCryptPasswordEncoder.encode(dto.getPassword()))
                 .build();
