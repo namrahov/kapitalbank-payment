@@ -53,6 +53,7 @@ public class KapitalbankProperties {
     @Setter
     public static class Redirect {
         private String callback;
+        private String returnUrl;
         private String success;
         private String error;
     }

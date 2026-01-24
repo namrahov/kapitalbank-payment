@@ -84,6 +84,7 @@ kapitalbank:
   redirect:
     callback: https://your-domain.com/payment/kapitalbank/callback
     success: /payment/success
+    return-url: https://app.yourdomain.com/payment/return
     error: /payment/error
 
   logging:

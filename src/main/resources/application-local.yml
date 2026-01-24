@@ -83,6 +83,7 @@ kapitalbank:
 
   redirect:
     callback: http://localhost:1992/payment/kapitalbank/callback
+    return-url: http://localhost:3000/payment/return
     success: /payment/success
     error: /payment/error
 

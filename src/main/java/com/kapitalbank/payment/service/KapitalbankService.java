@@ -94,7 +94,7 @@ public class KapitalbankService {
         order.put("currency", props.getHpp().getCurrency());
         order.put("language", props.getHpp().getLanguage());
         order.put("description", data.getOrDefault("description", ""));
-        order.put("hppRedirectUrl", props.getRedirect().getCallback());
+        order.put("hppRedirectUrl", props.getRedirect().getReturnUrl());
 
         if (data.containsKey("title")) {
             order.put("title", data.get("title"));
