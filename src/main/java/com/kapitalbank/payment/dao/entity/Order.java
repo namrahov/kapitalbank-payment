@@ -1,6 +1,7 @@
 package com.kapitalbank.payment.dao.entity;
 
 import com.kapitalbank.payment.model.enums.OrderStatus;
+import com.kapitalbank.payment.model.enums.ProductType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -41,7 +42,7 @@ public class Order {
     @Column(nullable = false)
     private String currency;
 
-    @Column(name="bank_password", nullable = false)
+    @Column(name="bank_password")
     private String bankPassword;
 
     @Column(unique = true)
@@ -49,6 +50,10 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="product_type")
+    private ProductType productType;
 
     @CreationTimestamp
     @Column(name="created_at", nullable = false)

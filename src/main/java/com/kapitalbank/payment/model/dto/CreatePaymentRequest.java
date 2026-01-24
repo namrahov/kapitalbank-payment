@@ -1,9 +1,10 @@
 package com.kapitalbank.payment.model.dto;
 
-import java.math.BigDecimal;
+
+import com.kapitalbank.payment.model.enums.ProductType;
 
 public record CreatePaymentRequest(
-        BigDecimal amount,
+        ProductType productType,
         String description
 ) {}
 

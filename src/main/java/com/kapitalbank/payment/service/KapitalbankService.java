@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +54,11 @@ public class KapitalbankService {
             CreatePaymentRequest request,
             HttpServletRequest httpServletRequest) {
 
+        BigDecimal amount = new BigDecimal("338.3");
         User currentUser = userUtil.getCurrentUser(httpServletRequest);
 
         Map<String, Object> data = Map.of(
-                "amount", request.amount(),
+                "amount", amount,
                 "description", request.description()
         );
 
@@ -66,7 +68,8 @@ public class KapitalbankService {
         // 2️⃣ Local DB-də order saxlanılır
         orderRepository.save(orderMapper.buildOrder(
                 props.getCurrency(),
-                request.amount(),
+                amount,
+                request,
                 currentUser.getId(),
                 orderResponse.id(),        // bankOrderId
                 orderResponse.password()
