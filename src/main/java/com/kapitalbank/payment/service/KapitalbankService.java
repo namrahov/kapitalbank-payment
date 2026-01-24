@@ -8,23 +8,27 @@ import com.kapitalbank.payment.dao.repo.UserRepository;
 import com.kapitalbank.payment.mapper.OrderMapper;
 import com.kapitalbank.payment.model.dto.CreateOrderResponse;
 import com.kapitalbank.payment.model.dto.CreatePaymentRequest;
+import com.kapitalbank.payment.model.dto.EmailDto;
 import com.kapitalbank.payment.model.dto.KapitalbankCallbackResult;
 import com.kapitalbank.payment.model.dto.OrderResponse;
 import com.kapitalbank.payment.model.enums.KapitalbankOrderType;
+import com.kapitalbank.payment.model.enums.OrderStatus;
 import com.kapitalbank.payment.model.exception.KapitalbankException;
+import com.kapitalbank.payment.util.EmailUtil;
 import com.kapitalbank.payment.util.UserUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import static com.kapitalbank.payment.model.enums.LinkType.LICENSE;
 
 @Slf4j
 @Service
@@ -36,10 +40,10 @@ public class KapitalbankService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final UserUtil userUtil;
+    private final UserRepository userRepository;
+    private final EmailUtil emailUtil;
+    private final LicenseService licenseService;
 
-    /* =======================
-       URL helpers
-       ======================= */
 
     private String apiBaseUrl() {
         return props.apiBaseUrl();
@@ -80,9 +84,6 @@ public class KapitalbankService {
         return createOrderByType("Order_DMS", data);
     }
 
-    /* =======================
-       Order creation
-       ======================= */
 
     protected OrderResponse createOrderByType(
             String typeRid,
@@ -131,82 +132,6 @@ public class KapitalbankService {
         );
     }
 
-
-    /* =======================
-       Order queries
-       ======================= */
-
-    public Map<String, Object> getOrderDetails(Long orderId, boolean full) {
-        String query = full
-                ? "?tranDetailLevel=2&tokenDetailLevel=2&orderDetailLevel=2"
-                : "";
-        return request("GET", "/order/" + orderId + query, Map.of());
-    }
-
-    public String getOrderStatus(Long orderId) {
-        Map<String, Object> details = getOrderDetails(orderId, false);
-        Map<String, Object> order = cast(details.get("order"));
-        return order != null
-                ? order.getOrDefault("status", "Unknown").toString()
-                : "Unknown";
-    }
-
-    /* =======================
-       Status helpers
-       ======================= */
-
-    public boolean isSuccessful(
-            KapitalbankOrderType type,
-            String status) {
-
-        return switch (type) {
-
-            // Simple Sale → ONLY full payment is success
-            case ORDER_SMS -> status.equals("FullyPaid");
-
-            // PreAuth → Approved is success (money blocked)
-            case ORDER_DMS -> status.equals("Approved")
-                    || status.equals("FullyPaid");
-
-            // Recurring → partial allowed
-            case ORDER_REC -> status.equals("FullyPaid")
-                    || status.equals("PartiallyPaid");
-        };
-    }
-
-
-    /* =======================
-       Callback verification
-       ======================= */
-
-    public KapitalbankCallbackResult verifyCallback(
-            Map<String, String> params) {
-
-        String orderId = params.getOrDefault("ID", params.get("id"));
-        String callbackStatus = params.getOrDefault("STATUS", params.get("status"));
-
-        if (orderId == null) {
-            throw new KapitalbankException(
-                    "Kapitalbank callback-də Order ID tapılmadı");
-        }
-
-        Map<String, Object> details = getOrderDetails(Long.valueOf(orderId), true);
-
-        Map<String, Object> order = cast(details.get("order"));
-        String actualStatus = order.getOrDefault("status", "Unknown").toString();
-
-        Long storedTokenId = extractStoredTokenId(order);
-
-        return new KapitalbankCallbackResult(
-                Long.valueOf(orderId),
-                callbackStatus,
-                actualStatus,
-                isSuccessful(KapitalbankOrderType.ORDER_SMS, actualStatus),
-                order,
-                storedTokenId
-        );
-    }
-
     /* =======================
        HTTP client
        ======================= */
@@ -241,14 +166,88 @@ public class KapitalbankService {
         }
     }
 
-    /* =======================
-       Helpers
+
+    public ResponseEntity<Void> callback(HttpServletRequest request) {
+        Map<String, String> params = extractParams(request);
+
+        try {
+            KapitalbankCallbackResult result = verifyCallback(params);
+
+            Long bankOrderId = result.orderId();
+
+            Order order = orderRepository.findByBankOrderId(bankOrderId)
+                    .orElseThrow(() -> new IllegalStateException("Local order not found for bankOrderId=" + bankOrderId));
+
+            // idempotency
+            if (order.getStatus() == OrderStatus.SUCCESS) {
+                return ResponseEntity.ok().build();
+            }
+
+            if (result.successful()) {
+                User user = userRepository.findById(order.getUserId())
+                        .orElseThrow(() -> new IllegalStateException("User not found"));
+
+                String licenseKey = licenseService.generateLicense("1234fhfg");
+                EmailDto emailDto = emailUtil.generateActivationEmail(licenseKey, LICENSE);
+                emailUtil.send(emailDto.getFrom(), user.getEmail(), emailDto.getSubject(), emailDto.getBody());
+
+                order.setStatus(OrderStatus.SUCCESS);
+            } else {
+                order.setStatus(OrderStatus.FAIL);
+            }
+
+            orderRepository.save(order);
+            return ResponseEntity.ok().build();
+
+        } catch (Exception ex) {
+            log.error("Kapitalbank callback verification failed", ex);
+            return ResponseEntity.ok().build();
+        }
+    }
+
+     /* =======================
+       Callback verification
        ======================= */
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> cast(Object obj) {
-        return (Map<String, Object>) obj;
+    public KapitalbankCallbackResult verifyCallback(
+            Map<String, String> params) {
+
+        String orderId = params.getOrDefault("ID", params.get("id"));
+        String callbackStatus = params.getOrDefault("STATUS", params.get("status"));
+
+        if (orderId == null) {
+            throw new KapitalbankException(
+                    "Kapitalbank callback-də Order ID tapılmadı");
+        }
+
+        Map<String, Object> details = getOrderDetails(Long.valueOf(orderId), true);
+
+        Map<String, Object> order = cast(details.get("order"));
+        String actualStatus = order.getOrDefault("status", "Unknown").toString();
+
+        Long storedTokenId = extractStoredTokenId(order);
+
+        return new KapitalbankCallbackResult(
+                Long.valueOf(orderId),
+                callbackStatus,
+                actualStatus,
+                isSuccessful(KapitalbankOrderType.ORDER_SMS, actualStatus),
+                order,
+                storedTokenId
+        );
     }
+
+       /* =======================
+       Order queries
+       ======================= */
+
+    public Map<String, Object> getOrderDetails(Long orderId, boolean full) {
+        String query = full
+                ? "?tranDetailLevel=2&tokenDetailLevel=2&orderDetailLevel=2"
+                : "";
+        return request("GET", "/order/" + orderId + query, Map.of());
+    }
+
 
     private Long extractStoredTokenId(Map<String, Object> order) {
         Object tokens = order.get("storedTokens");
@@ -262,6 +261,46 @@ public class KapitalbankService {
             }
         }
         return null;
+    }
+
+
+    /* =======================
+       Status helpers
+       ======================= */
+
+    public boolean isSuccessful(
+            KapitalbankOrderType type,
+            String status) {
+
+        return switch (type) {
+
+            // Simple Sale → ONLY full payment is success
+            case ORDER_SMS -> status.equals("FullyPaid");
+
+            // PreAuth → Approved is success (money blocked)
+            case ORDER_DMS -> status.equals("Approved")
+                    || status.equals("FullyPaid");
+
+            // Recurring → partial allowed
+            case ORDER_REC -> status.equals("FullyPaid")
+                    || status.equals("PartiallyPaid");
+        };
+    }
+
+    private Map<String, String> extractParams(HttpServletRequest request) {
+        return request.getParameterMap()
+                .entrySet()
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> e.getValue()[0]
+                ));
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> cast(Object obj) {
+        return (Map<String, Object>) obj;
     }
 
 }
