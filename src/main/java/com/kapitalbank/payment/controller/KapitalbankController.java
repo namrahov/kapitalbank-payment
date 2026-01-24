@@ -9,6 +9,7 @@ import com.kapitalbank.payment.model.dto.CreatePaymentRequest;
 import com.kapitalbank.payment.model.dto.EmailDto;
 import com.kapitalbank.payment.model.dto.KapitalbankCallbackResult;
 import com.kapitalbank.payment.model.dto.OrderResponse;
+import com.kapitalbank.payment.model.dto.OrderStatusResponse;
 import com.kapitalbank.payment.model.enums.OrderStatus;
 import com.kapitalbank.payment.service.KapitalbankService;
 import com.kapitalbank.payment.service.LicenseService;
@@ -20,10 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.Map;
 import java.util.Optional;
@@ -97,6 +100,15 @@ public class KapitalbankController {
     // =========================
     // Helpers
     // =========================
+
+    @GetMapping("/orders/status")
+    public OrderStatusResponse getStatus(@RequestParam Long bankOrderId) {
+        Order order = orderRepository.findByBankOrderId(bankOrderId)
+                .orElseThrow();
+
+        return new OrderStatusResponse(order.getStatus());
+    }
+
 
     private Map<String, String> extractParams(HttpServletRequest request) {
         return request.getParameterMap()
