@@ -40,7 +40,6 @@ public class KapitalbankProperties {
     @Getter
     @Setter
     public static class Hpp {
-        private Map<String, String> url;
         private String currency = "AZN";
         private String language = "az";
         private boolean saveCards;
@@ -74,9 +73,6 @@ public class KapitalbankProperties {
         return api.getBaseUrl().get(mode);
     }
 
-    public String hppUrl() {
-        return hpp.getUrl().get(mode);
-    }
 }
 
 

@@ -74,9 +74,6 @@ kapitalbank:
     timeout-seconds: 30
 
   hpp:
-    url:
-      test: https://txpgtst.kapitalbank.az/flex
-      production: https://e-commerce.kapitalbank.az/flex
     language: az
     currency: AZN
     save-cards: true

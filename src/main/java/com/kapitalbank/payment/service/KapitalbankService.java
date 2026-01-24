@@ -33,7 +33,6 @@ public class KapitalbankService {
 
     private final KapitalbankProperties props;
     private final WebClient.Builder webClientBuilder;
-    private final UserRepository userRepository;
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final UserUtil userUtil;
@@ -46,13 +45,10 @@ public class KapitalbankService {
         return props.apiBaseUrl();
     }
 
-    private String hppBaseUrl() {
-        return props.hppUrl();
-    }
+    public CreateOrderResponse createOrderAndGetPaymentUrl(
+            CreatePaymentRequest request,
+            HttpServletRequest httpServletRequest) {
 
-
-    public CreateOrderResponse createOrderAndGetPaymentUrl(CreatePaymentRequest request,
-                                                           HttpServletRequest httpServletRequest) {
         User currentUser = userUtil.getCurrentUser(httpServletRequest);
 
         Map<String, Object> data = Map.of(
@@ -60,20 +56,25 @@ public class KapitalbankService {
                 "description", request.description()
         );
 
+        // 1️⃣ Bankda order yaradılır
         OrderResponse orderResponse = createPreAuthOrder(data);
 
+        // 2️⃣ Local DB-də order saxlanılır
         orderRepository.save(orderMapper.buildOrder(
                 props.getHpp().getCurrency(),
                 request.amount(),
                 currentUser.getId(),
+                orderResponse.id(),        // bankOrderId
+                orderResponse.password()
+        ));
+
+        // 3️⃣ BANKIN verdiyi payment URL birbaşa qaytarılır
+        return new CreateOrderResponse(
                 orderResponse.id(),
-                orderResponse.password()));
-
-        String redirectUrl = getPaymentUrl(orderResponse.id(), orderResponse.password());
-
-        return new CreateOrderResponse(orderResponse.id(), redirectUrl);
-
+                orderResponse.hppUrl()     // 🔴 ƏN VACİB DƏYİŞİKLİK
+        );
     }
+
 
     public OrderResponse createPreAuthOrder(Map<String, Object> data) {
         return createOrderByType("Order_DMS", data);
@@ -130,15 +131,6 @@ public class KapitalbankService {
         );
     }
 
-    /* =======================
-       HPP redirect
-       ======================= */
-
-    public String getPaymentUrl(Long orderId, String password) {
-        return hppBaseUrl()
-                + "?id=" + orderId
-                + "&password=" + password;
-    }
 
     /* =======================
        Order queries
