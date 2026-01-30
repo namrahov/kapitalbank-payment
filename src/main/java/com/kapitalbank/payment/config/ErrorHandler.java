@@ -1,6 +1,7 @@
 package com.kapitalbank.payment.config;
 
 import com.kapitalbank.payment.model.exception.ExceptionResponse;
+import com.kapitalbank.payment.model.exception.LicenseExpiredException;
 import com.kapitalbank.payment.model.exception.NotFoundException;
 import com.kapitalbank.payment.model.exception.RateLimitExceededException;
 import com.kapitalbank.payment.model.exception.TrialException;
@@ -31,6 +32,12 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ExceptionResponse handleLicenseException(TrialException ex) {
         return new ExceptionResponse("TRIAL_OVER", ex.getMessage());
+    }
+
+    @ExceptionHandler(LicenseExpiredException.class)
+    @ResponseStatus(HttpStatus.PAYMENT_REQUIRED)
+    public ExceptionResponse handleLicenseExpired(LicenseExpiredException ex) {
+        return new ExceptionResponse("LICENSE_EXPIRED", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

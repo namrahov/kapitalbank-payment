@@ -19,6 +19,7 @@ public class WhiteListApi {
             "/payment/kapitalbank/callback",
             "/actuator/health",
             "/internal/licence/check-trial",
+            "/internal/licence/check-expire",
             "/v1/contacts",
             "/v3/api-docs/**",
             "/swagger-ui/**",

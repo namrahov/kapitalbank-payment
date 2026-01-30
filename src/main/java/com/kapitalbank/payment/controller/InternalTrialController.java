@@ -24,4 +24,9 @@ public class InternalTrialController {
     public TrialActivationResponse checkTrial(@RequestBody @Valid InstanceDto instanceId) {
         return trialService.checkTrial(instanceId);
     }
+
+    @PostMapping("/check-expire")
+    public boolean isExpire(@RequestBody @Valid InstanceDto instanceId) {
+        return trialService.isExpire(instanceId);
+    }
 }
